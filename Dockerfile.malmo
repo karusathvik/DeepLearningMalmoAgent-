@@ -1,0 +1,17 @@
+FROM andkram/malmo
+
+USER root
+
+# Install curl so we can download the right pip installer
+RUN apt-get update && apt-get install -y curl
+
+# Get the correct pip bootstrap script for Python 3.5
+RUN curl https://bootstrap.pypa.io/pip/3.5/get-pip.py -o get-pip.py
+
+# Install a pip version compatible with Python 3.5
+RUN python3 get-pip.py "pip==20.3.4"
+
+# Install the last NumPy version compatible with Python 3.5
+RUN pip install "numpy==1.18.5"
+
+USER malmo
