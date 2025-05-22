@@ -34,31 +34,6 @@ else:
     import functools
     print = functools.partial(print, flush=True)
 
-# Create default Malmo objects:
-def Menger(xorg, yorg, zorg, size, blocktype, variant, holetype):
-    #draw solid chunk
-    genstring = GenCuboidWithVariant(xorg,yorg,zorg,xorg+size-1,yorg+size-1,zorg+size-1,blocktype,variant) + "\n"
-    #now remove holes
-    unit = size
-    while (unit >= 3):
-        w=unit//3
-        for i in range(0, size, unit):
-            for j in range(0, size, unit):
-                x=xorg+i
-                y=yorg+j
-                genstring += GenCuboid(x+w,y+w,zorg,(x+2*w)-1,(y+2*w)-1,zorg+size-1,holetype) + "\n"
-                y=yorg+i
-                z=zorg+j
-                genstring += GenCuboid(xorg,y+w,z+w,xorg+size-1, (y+2*w)-1,(z+2*w)-1,holetype) + "\n"
-                genstring += GenCuboid(x+w,yorg,z+w,(x+2*w)-1,yorg+size-1,(z+2*w)-1,holetype) + "\n"
-        unit = w
-    return genstring
-
-def GenCuboid(x1, y1, z1, x2, y2, z2, blocktype):
-    return '<DrawCuboid x1="' + str(x1) + '" y1="' + str(y1) + '" z1="' + str(z1) + '" x2="' + str(x2) + '" y2="' + str(y2) + '" z2="' + str(z2) + '" type="' + blocktype + '"/>'
-
-def GenCuboidWithVariant(x1, y1, z1, x2, y2, z2, blocktype, variant):
-    return '<DrawCuboid x1="' + str(x1) + '" y1="' + str(y1) + '" z1="' + str(z1) + '" x2="' + str(x2) + '" y2="' + str(y2) + '" z2="' + str(z2) + '" type="' + blocktype + '" variant="' + variant + '"/>'
 agent_host = MalmoPython.AgentHost()
 try:
     agent_host.parse( sys.argv )
@@ -179,7 +154,7 @@ while world_state.is_mission_running:
         agent_host.sendCommand("turn 0")  # stop turning
         temp+= 1 
 
-    obv.get_world_state(world_state) 
+    print(obv.get_world_state(world_state))
 
 
 print()

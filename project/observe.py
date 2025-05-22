@@ -12,11 +12,8 @@ def get_world_state (world_state):
         name = entity['name']
         res[name] = {
             'x': entity.get('x'),
-            'y': entity.get('y'),
             'z': entity.get('z'),
-            'yaw': entity.get('yaw'),
-            'life': entity.get('life'),  # could be None for items like 'diamond'
-            'pitch': entity.get('pitch')
+            'life': entity.get('life')  # could be None for items like 'diamond'
         }
     return res    
 
