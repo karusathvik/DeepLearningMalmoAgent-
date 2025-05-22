@@ -84,11 +84,12 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Weather>clear</Weather>
               </ServerInitialConditions>
               <ServerHandlers>
-                  <FlatWorldGenerator generatorString="3;7,20*1;1;" forceReset="true"/>
+                  <FlatWorldGenerator generatorString="3;7,20*1;1;"/>
        
                   <DrawingDecorator>
                       <DrawCuboid x1="-10" y1="15" z1="-10" x2=" 10" y2="58" z2=" 10" type="air"/>
                       <DrawCuboid x1="-10" y1="20" z1="-10" x2=" 10" y2="21" z2=" 10" type="glass"/>
+                      <DrawCuboid x1="-10" y1="14" z1="-10" x2=" 10" y2="15" z2=" 10" type="glowstone"/>
                       <DrawItem x=" 3" y="16" z="-9" type="diamond"/>
                       <DrawItem x="-6" y="16" z=" 5" type="diamond"/>
                       <DrawItem x="-7" y="16" z=" 2" type="diamond"/>
