@@ -28,6 +28,18 @@ import os
 import sys
 import time
 
+import socket
+import json
+server = socket.socket()
+server.bind(('0.0.0.0', 5000))  #make sure you map your mac port to 5000 
+server.listen(1)
+print("Waiting for host connection...")
+conn, addr = server.accept()
+print("Connected by", addr)
+
+
+
+
 if sys.version_info[0] == 2:
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
 else:
@@ -154,7 +166,13 @@ while world_state.is_mission_running:
         agent_host.sendCommand("turn 0")  # stop turning
         temp+= 1 
 
-    print(obv.get_world_state(world_state))
+    #for now this simply just sends the dictionary to the client ie the mac book 
+    try:
+        res = obv.get_world_state(world_state)
+        conn.send((json.dumps(res)+'\n').encode())
+    except BrokenPipeError:
+        print("Clinet Disconnected")
+        break
 
 
 print()
