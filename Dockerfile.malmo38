@@ -1,0 +1,112 @@
+# 1) Base image – Ubuntu 16.04 + Malmo headless
+FROM andkram/malmo_build_headless_0_35_6
+USER root
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 2) Core build deps
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      build-essential cmake git openjdk-8-jdk swig wget bzip2 \
+      libbz2-dev zlib1g-dev libssl-dev libffi-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# 3) Python 3.8 from source
+ARG PYTHON_VERSION=3.8.16
+RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz \
+ && tar xzf Python-${PYTHON_VERSION}.tgz \
+ && cd Python-${PYTHON_VERSION} \
+ && ./configure --enable-optimizations \
+ && make -j"$(nproc)" altinstall \
+ && cd .. && rm -rf Python-${PYTHON_VERSION}* \
+ && ln -sf /usr/local/bin/python3.8 /usr/bin/python3 \
+ && ln -sf /usr/local/bin/pip3.8   /usr/bin/pip3
+
+# 4) Boost.Python build with SYSTEM layout → libboost_python.so
+ARG BOOST_VERSION=1.76.0
+ARG BOOST_USCORE=1_76_0
+
+# use /tmp for intermediate build
+WORKDIR /tmp
+
+# 1) Download the archive
+RUN wget -O boost_${BOOST_USCORE}.tar.bz2 \
+      https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_USCORE}.tar.bz2/download
+
+# 2) Extract it
+RUN tar xjf boost_${BOOST_USCORE}.tar.bz2
+
+# 3) Bootstrap for Python 3.8
+RUN cd boost_${BOOST_USCORE} \
+ && ./bootstrap.sh \
+      --with-python=/usr/local/bin/python3.8 \
+      --prefix=/usr/local
+
+# 4) Build & install only Boost.Python with “system” layout
+
+#WORKDIR /tmp/boost_${BOOST_USCORE}
+#RUN wget -O boost_${BOOST_USCORE}.tar.bz2 \
+# "https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_USCORE}.tar.bz2/download" \
+# && tar xjf boost_${BOOST_USCORE}.tar.bz2 \
+# && cd boost_${BOOST_USCORE} \
+# && ./bootstrap.sh --with-python=/usr/local/bin/python3.8 --prefix=/usr/local \
+# && ./b2 install \
+#      --with-python \
+#      --with-chrono \
+#      --with-filesystem \
+#      --with-program_options \
+#      --with-regex \
+#      --with-system \
+#      --with-thread \
+#      --layout=system \
+#      -j"$(nproc)"
+
+
+RUN cd boost_${BOOST_USCORE} \
+ ./b2 install --with-python --layout=system -d+2 -j$(nproc) 2>&1 | tee /tmp/boost-install.log
+
+# 5) Clean up sources & archive
+RUN rm -rf /tmp/boost_${BOOST_USCORE}.tar.bz2 /tmp/boost_${BOOST_USCORE}
+
+# (optional) return to your working directory
+WORKDIR /
+
+# 5) Clone Malmo
+RUN git clone https://github.com/microsoft/malmo.git /malmo
+
+# 6) Build from repo root (so cmake/ is in the module path)
+WORKDIR /malmo
+RUN mkdir build && cd build && \
+    cmake .. \
+      -DCMAKE_INSTALL_PREFIX=/usr/local \
+      -DPYTHON_EXECUTABLE=/usr/local/bin/python3.8 \
+      -DUSE_PYTHON_VERSIONS=3.8 \
+      -DINCLUDE_PYTHON=ON \
+      -DBOOST_ROOT=/usr/local \
+      -DBoost_PYTHON_LIBRARY_RELEASE=boost_python && \
+    make -j"$(nproc)" MalmoPython && \
+    make install
+
+# 5) Clone Malmo and build the Python bindings from the repo root
+#RUN git clone https://github.com/microsoft/malmo.git /malmo \
+ #&& mkdir /malmo/build \
+ #&& cd /malmo/build \
+ #&& cmake ../Malmo \
+ #     -DCMAKE_MODULE_PATH=../Malmo/cmake \
+ #     -DCMAKE_INSTALL_PREFIX=/usr/local \
+ #     -DPYTHON_EXECUTABLE=/usr/local/bin/python3.8 \
+ #     -DUSE_PYTHON_VERSIONS=3.8 \
+ #     -DINCLUDE_PYTHON=ON \
+ #     -DBOOST_ROOT=/usr/local \
+ #     -DBoost_INCLUDE_DIR=/usr/local/include \
+ #     -DBoost_LIBRARY_DIR=/usr/local/lib \
+ #     -DBoost_PYTHON_LIBRARY_RELEASE=boost_python \
+ #&& make -j"$(nproc)" MalmoPython \
+ #&& make install
+
+# 6) Install Stable-Baselines3
+RUN python3 -m pip install --no-cache-dir stable-baselines3[extra]
+
+# 7) Drop back to the malmo user
+USER malmo
+CMD ["bash"]
+
