@@ -174,6 +174,9 @@ while world_state.is_mission_running:
         print("Clinet Disconnected")
         break
 
+conn.close()
+server.close()
+print("Server closed.")
 
 print()
 print("Mission ended")
