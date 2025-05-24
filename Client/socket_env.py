@@ -39,8 +39,9 @@ class SocketEnv(gym.Env):
         Reset the environment and get initial state
         """
         # Read initial state from socket
-        action_dict = {"vertical": -2, "horizontal": -2} # this is to reset
+        action_dict = {"vertical": -2, "horizontal": -2}
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
+
         line = self.sock_file.readline()
         self.current_state = json.loads(line)
         
@@ -53,6 +54,8 @@ class SocketEnv(gym.Env):
         """
         Execute one time step within the environment
         """
+        if total_collected == 5:
+            done = True
         # Send action to socket
         vert, horz = action
         action_dict = {"vertical": int(vert), "horizontal": int(horz)}
@@ -81,7 +84,6 @@ class SocketEnv(gym.Env):
         return state_array, reward, done, {}
     
     def close(self):
-        """
-        Clean up resources
-        """
+        self.sock.send((str(5) + '\n').encode())
         self.sock.close()
+        

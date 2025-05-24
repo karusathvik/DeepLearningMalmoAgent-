@@ -31,7 +31,7 @@ import socket
 import json
 
 
-actions = ["move 1", "move -1", "turn 1", "turn -1"]
+action = ["move", "strafe"]
 
 
 server = socket.socket()
@@ -65,16 +65,13 @@ with open ('mission.xml', 'r') as f:
 
 max_retries = 3
 run = 0
+reset = True 
+
+
 while True:
     run += 1
     print("\nStarting Episode {}".format(run))
-
-    data = conn.recv(1024).decode().strip() # would be from 0-3 where 4 is start, 5 is end
-    #wait for the client to say start the mission 
     
-    if data.isdigit() and int(data) == 5:
-        break
-     
     my_mission = MalmoPython.MissionSpec(missionXML, False)
     my_mission_record = MalmoPython.MissionRecordSpec()
     
@@ -112,12 +109,17 @@ while True:
 
         
         
-        data = conn.recv(1024).decode().strip()
-        if data.isdigit():
-            idx = int(data)
-            if 0 <= idx < len(actions):
-                action = actions[idx]
-                agent_host.sendCommand(action)
+        data = json.loads(conn.recv(1024).decode().strip())
+        
+        if data["vertical"] == -2 and data["horizontal"] == -2:
+            break
+        else: 
+            reset = True 
+            h = data["horizontal"]
+            v = data["vertical"]
+            agent_host.sendCommand(create_command("move", v))
+            agent_host.sendCommand(create_command("strafe", h))
+    
                 
         try:
             res = obv.get_world_state(world_state)
@@ -127,7 +129,7 @@ while True:
             conn.close()
             server.close()
             sys.exit(0)
-
+    
     print("\nEpisode complete.")
     time.sleep(2) 
 
