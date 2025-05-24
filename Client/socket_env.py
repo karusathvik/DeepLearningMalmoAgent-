@@ -37,12 +37,8 @@ class SocketEnv(gym.Env):
         """
         Reset the environment and get initial state
         """
-        # Read initial state from socket
-<<<<<<< HEAD
-        action_dict = ({"v": -2, "horizontal": -2}
-=======
+
         action_dict = {"vertical": -2, "horizontal": -2} # this is to reset
->>>>>>> 648c2aaf9e5172001b45398220d4f64bee11da29
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
         line = self.sock_file.readline()
         self.current_state = json.loads(line)
@@ -86,5 +82,6 @@ class SocketEnv(gym.Env):
         return state_array, reward, done, {}
     
     def close(self):
-        self.sock.send((str(5) + '\n').encode())
+        action_dict = {"vertical": 2, "horizontal": 2}
+        self.sock.sendall((json.dumps(action_dict) + "\n").encode())
         self.sock.close()
