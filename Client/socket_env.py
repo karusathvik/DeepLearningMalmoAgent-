@@ -22,7 +22,9 @@ class SocketEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=-np.inf, 
             high=np.inf, 
-            shape=(10,),  # Example: 10-dimensional state space
+            shape=(21,),  
+# State Space: (agentx, agenty, health, d1x, d1y, 
+# d2x, d2y, d3x, d3y, d4x, d4y, d5x, d5y, d1, d2, d3, d4, d5, zx, zy, done)
             dtype=np.float32
         )
         
@@ -33,6 +35,8 @@ class SocketEnv(gym.Env):
         Reset the environment and get initial state
         """
         # Read initial state from socket
+        action_dict = {"action": 5} # Action 5 is to reset
+        self.sock.sendall((json.dumps(action_dict) + "\n").encode())
         line = self.sock_file.readline()
         self.current_state = json.loads(line)
         
@@ -58,7 +62,13 @@ class SocketEnv(gym.Env):
         
         # Get reward and done flag from state
         # Adjust this based on your actual state format
-        reward = next_state.get("reward", 0.0)
+        total_collected = next_state.get("d1") + next_state.get("d2") +next_state.get("d3") +next_state.get("d4")+ next_state.get("d5")
+        already_collected = self.current_state.get("d1") + self.current_state.get("d2") + self.current_state.get("d3") + self.current_state.get("d4") + self.current_state.get("d5")
+        new_health = next_state.get("health")
+        old_health = self.current_state.get("health")
+        
+        # reward = 5*(total_collected - already_collected) +2*(new_health - old_health) - 0.01
+        reward = 2*(new_health - old_health) - 0.01
         done = next_state.get("done", False)
         
         # Store current state
