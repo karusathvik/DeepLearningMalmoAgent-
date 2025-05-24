@@ -17,7 +17,6 @@ class SocketEnv(gym.Env):
         self.sock_file = self.sock.makefile("r")
         
         # Define action and observation space
-        # You'll need to adjust these based on your actual state and action spaces
         self.action_space = spaces.Box(
             low=np.array([-1.0, -1.0], dtype=np.float32),
             high=np.array([ 1.0,  1.0], dtype=np.float32),
@@ -39,9 +38,12 @@ class SocketEnv(gym.Env):
         Reset the environment and get initial state
         """
         # Read initial state from socket
+<<<<<<< HEAD
         action_dict = ({"v": -2, "horizontal": -2}
+=======
+        action_dict = {"vertical": -2, "horizontal": -2} # this is to reset
+>>>>>>> 648c2aaf9e5172001b45398220d4f64bee11da29
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
-
         line = self.sock_file.readline()
         self.current_state = json.loads(line)
         
@@ -54,8 +56,6 @@ class SocketEnv(gym.Env):
         """
         Execute one time step within the environment
         """
-        if total_collected == 5:
-            done = True
         # Send action to socket
         vert, horz = action
         action_dict = {"vertical": int(vert), "horizontal": int(horz)}
@@ -77,7 +77,9 @@ class SocketEnv(gym.Env):
         # reward = 5*(total_collected - already_collected) +2*(new_health - old_health) - 0.01
         reward = 2*(new_health - old_health) - 0.01
         done = next_state.get("done", False)
-        
+        if(total_collected == 5):
+            done = True
+            reward = reward + 100
         # Store current state
         self.current_state = next_state
         
@@ -86,4 +88,3 @@ class SocketEnv(gym.Env):
     def close(self):
         self.sock.send((str(5) + '\n').encode())
         self.sock.close()
-        
