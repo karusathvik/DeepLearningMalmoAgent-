@@ -18,7 +18,11 @@ class SocketEnv(gym.Env):
         
         # Define action and observation space
         # You'll need to adjust these based on your actual state and action spaces
-        self.action_space = spaces.Discrete(4)  # Example: 4 discrete actions
+        self.action_space = spaces.Box(
+            low=np.array([-1.0, -1.0], dtype=np.float32),
+            high=np.array([ 1.0,  1.0], dtype=np.float32),
+            dtype=np.float32
+        )
         self.observation_space = spaces.Box(
             low=-np.inf, 
             high=np.inf, 
@@ -35,7 +39,7 @@ class SocketEnv(gym.Env):
         Reset the environment and get initial state
         """
         # Read initial state from socket
-        action_dict = {"action": 5} # Action 5 is to reset
+        action_dict = {"vertical": -2, "horizontal": -2} # this is to reset
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
         line = self.sock_file.readline()
         self.current_state = json.loads(line)
@@ -50,7 +54,8 @@ class SocketEnv(gym.Env):
         Execute one time step within the environment
         """
         # Send action to socket
-        action_dict = {"action": int(action)}
+        vert, horz = action
+        action_dict = {"vertical": int(vert), "horizontal": int(horz)}
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
         
         # Get next state from socket
@@ -61,7 +66,6 @@ class SocketEnv(gym.Env):
         state_array = np.array(list(next_state.values()), dtype=np.float32)
         
         # Get reward and done flag from state
-        # Adjust this based on your actual state format
         total_collected = next_state.get("d1") + next_state.get("d2") +next_state.get("d3") +next_state.get("d4")+ next_state.get("d5")
         already_collected = self.current_state.get("d1") + self.current_state.get("d2") + self.current_state.get("d3") + self.current_state.get("d4") + self.current_state.get("d5")
         new_health = next_state.get("health")
