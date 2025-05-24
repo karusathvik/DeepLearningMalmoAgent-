@@ -85,9 +85,3 @@ class SocketEnv(gym.Env):
         Clean up resources
         """
         self.sock.close()
-        
-    def render(self, mode='human'):
-        """
-        Optional: Implement if you want to visualize the environment
-        """
-        pass 

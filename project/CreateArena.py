@@ -27,18 +27,19 @@ from malmo import MalmoPython
 import os
 import sys
 import time
-
 import socket
 import json
+
+
+actions = ["move 1", "move -1", "turn 1", "turn -1"]
+
+
 server = socket.socket()
-server.bind(('0.0.0.0', 5000))  #make sure you map your mac port to 5000 
+server.bind(('0.0.0.0', 5000))  
 server.listen(1)
 print("Waiting for host connection...")
 conn, addr = server.accept()
 print("Connected by", addr)
-
-
-
 
 if sys.version_info[0] == 2:
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
@@ -56,71 +57,80 @@ except RuntimeError as e:
 if agent_host.receivedArgument("help"):
     print(agent_host.getUsage())
     exit(0)
+    
+    
+with open ('mission.xml', 'r') as f:
+    missionXML= f.read() 
 
-with open('mission.xml', 'r') as f:    
-    missionXML= f.read()
 
-
-#<DrawEntity x="2" y="16" z="2" type="Zombie" yaw="0" pitch="0"/> for zombie 
-
-# try:
-my_mission = MalmoPython.MissionSpec(missionXML, False)
-# except RuntimeError as e:
-#     print("MissionSpec validation error:", e)
-#     sys.exit(1)
-# my_mission = MalmoPython.MissionSpec()
-my_mission_record = MalmoPython.MissionRecordSpec()
-
-# Attempt to start a mission:
 max_retries = 3
-for retry in range(max_retries):
-    try:
-        agent_host.startMission( my_mission, my_mission_record )
-        break
-    except RuntimeError as e:
-        if retry == max_retries - 1:
-            print("Error starting mission:",e)
-            exit(1)
-        else:
-            time.sleep(2)
+run = 0
+while True:
+    run += 1
+    print("\nStarting Episode {}".format(run))
 
-# Loop until mission starts:
-print("Waiting for the mission to start ", end=' ')
-world_state = agent_host.getWorldState()
-while not world_state.has_mission_begun:
-    print(".", end="")
-    time.sleep(0.1)
-    world_state = agent_host.getWorldState()
-    for error in world_state.errors:
-        print("Error:",error.text)
+    data = conn.recv(1024).decode().strip() # would be from 0-3 where 4 is start, 5 is end
+    #wait for the client to say start the mission 
+    
+    if data.isdigit() and int(data) == 5:
+        break
      
+    my_mission = MalmoPython.MissionSpec(missionXML, False)
+    my_mission_record = MalmoPython.MissionRecordSpec()
+    
+    
+    for retry in range(max_retries):
+        try:
+            agent_host.startMission(my_mission, my_mission_record)
+            break
+        except RuntimeError as e:
+            if retry == max_retries - 1:
+                print("Error starting mission:", e)
+                conn.close()
+                server.close()
+                sys.exit(1)
+            else:
+                time.sleep(2)
 
-print()
-print("Mission running ", end=' ')
 
-# Loop until mission ends:
-time.sleep(1)
-
-temp = 0; 
-while world_state.is_mission_running:
-    print(".", end="")
-    time.sleep(0.1)
     world_state = agent_host.getWorldState()
-    for error in world_state.errors:
-        print("Error:",error.text)
-    if temp is 0: 
-        agent_host.sendCommand("move 0.2")
-        time.sleep(1)  # let it rotate for ~1 second
-        agent_host.sendCommand("turn 0")  # stop turning
-        temp+= 1 
+    print("Waiting for the mission to start ", end=' ')
+    while not world_state.has_mission_begun:
+        print(".", end="")
+        time.sleep(0.1)
+        world_state = agent_host.getWorldState()
+        for error in world_state.errors:
+            print("Error:", error.text)
 
-    #for now this simply just sends the dictionary to the client ie the mac book 
-    try:
-        res = obv.get_world_state(world_state)
-        conn.send((json.dumps(res)+'\n').encode())
-    except BrokenPipeError:
-        print("Clinet Disconnected")
-        break
+    print("\nMission running", end=' ')
+    time.sleep(1)
+
+    while world_state.is_mission_running:
+        print(".", end="")
+        time.sleep(0.1)
+        world_state = agent_host.getWorldState()
+
+        
+        
+        data = conn.recv(1024).decode().strip()
+        if data.isdigit():
+            idx = int(data)
+            if 0 <= idx < len(actions):
+                action = actions[idx]
+                agent_host.sendCommand(action)
+                
+        try:
+            res = obv.get_world_state(world_state)
+            conn.send((json.dumps(res) + '\n').encode())
+        except BrokenPipeError:
+            print("Client Disconnected")
+            conn.close()
+            server.close()
+            sys.exit(0)
+
+    print("\nEpisode complete.")
+    time.sleep(2) 
+
 
 conn.close()
 server.close()
