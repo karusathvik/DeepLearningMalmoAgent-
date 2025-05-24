@@ -39,7 +39,7 @@ class SocketEnv(gym.Env):
         Reset the environment and get initial state
         """
         # Read initial state from socket
-        action_dict = {"vertical": -2, "horizontal": -2}
+        action_dict = ({"v": -2, "horizontal": -2}
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
 
         line = self.sock_file.readline()

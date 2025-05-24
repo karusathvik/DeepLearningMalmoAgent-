@@ -30,10 +30,6 @@ import time
 import socket
 import json
 
-
-action = ["move", "strafe"]
-
-
 server = socket.socket()
 server.bind(('0.0.0.0', 5000))  
 server.listen(1)
@@ -65,10 +61,13 @@ with open ('mission.xml', 'r') as f:
 
 max_retries = 3
 run = 0
-reset = True 
+
+end = False 
+reset = False 
 
 
-while True:
+
+while not end:
     run += 1
     print("\nStarting Episode {}".format(run))
     
@@ -108,13 +107,15 @@ while True:
         world_state = agent_host.getWorldState()
 
         
-        
-        data = json.loads(conn.recv(1024).decode().strip())
+        if not reset:
+            data = json.loads(conn.recv(1024).decode().strip())
         
         if data["vertical"] == -2 and data["horizontal"] == -2:
+            reset = True
             break
+        elif data["vertical"] == 2 and data["horizontal"] == 2:
+            end = True
         else: 
-            reset = True 
             h = data["horizontal"]
             v = data["vertical"]
             agent_host.sendCommand(create_command("move", v))
@@ -122,6 +123,7 @@ while True:
     
                 
         try:
+            reset = False
             res = obv.get_world_state(world_state)
             conn.send((json.dumps(res) + '\n').encode())
         except BrokenPipeError:
