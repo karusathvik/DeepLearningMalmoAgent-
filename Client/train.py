@@ -1,3 +1,4 @@
+print("hi")
 from stable_baselines3 import PPO
 from socket_env import SocketEnv
 
@@ -8,14 +9,14 @@ env = SocketEnv()
 model = PPO("MlpPolicy", env, verbose=1)
 
 # Train the agent
-model.learn(total_timesteps=100000)
+model.learn(total_timesteps=100)
 
 # Save the trained agent
 model.save("socket_agent")
 
 # Test the trained agent
 obs = env.reset()
-for i in range(1000):
+for i in range(100):
     action, _states = model.predict(obs)
     obs, rewards, dones, info = env.step(action)
     if dones:

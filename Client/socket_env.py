@@ -1,8 +1,8 @@
 import socket
 import json
-import gym
+import gymnasium as gym
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 class SocketEnv(gym.Env):
     """
