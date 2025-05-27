@@ -31,9 +31,11 @@ import socket
 import json
 
 server = socket.socket()
-server.bind(('0.0.0.0', 5000))  
+host = '0.0.0.0'
+port = 5001
+server.bind((host, port))  
 server.listen(1)
-print("Waiting for host connection...")
+print("Waiting for host connection on port {}".format(port))
 conn, addr = server.accept()
 print("Connected by", addr)
 
@@ -67,75 +69,81 @@ reset = False
 
 
 
-while not end:
-    run += 1
-    print("\nStarting Episode {}".format(run))
+while end == False:
+    data = json.loads(conn.recv(1024).decode().strip())
+    print("received {}".format(data))
+    if data["vertical"] == -2 and data["horizontal"] == -2:
+        reset = True
     
-    my_mission = MalmoPython.MissionSpec(missionXML, False)
-    my_mission_record = MalmoPython.MissionRecordSpec()
-    
-    
-    for retry in range(max_retries):
+    if reset:
+        reset = False
+        run += 1
+        print("\nStarting Episode {}".format(run))
+
+        my_mission = MalmoPython.MissionSpec(missionXML, False)
+        my_mission_record = MalmoPython.MissionRecordSpec()
+
+
+        for retry in range(max_retries):
+            try:
+                agent_host.startMission(my_mission, my_mission_record)
+                break
+            except RuntimeError as e:
+                if retry == max_retries - 1:
+                    print("Error starting mission:", e)
+                    conn.close()
+                    server.close()
+                    sys.exit(1)
+                else:
+                    time.sleep(2)
+
+
+        world_state = agent_host.getWorldState()
+        print("Waiting for the mission to start ", end=' ')
+        while not world_state.has_mission_begun:
+            print(".", end="")
+            time.sleep(0.1)
+            world_state = agent_host.getWorldState()
+            for error in world_state.errors:
+                print("Error:", error.text)
+       
+        print("\nMission running", end=' ')
+        time.sleep(1)
+        world_state = agent_host.getWorldState()
         try:
-            agent_host.startMission(my_mission, my_mission_record)
-            break
-        except RuntimeError as e:
-            if retry == max_retries - 1:
-                print("Error starting mission:", e)
-                conn.close()
-                server.close()
-                sys.exit(1)
-            else:
-                time.sleep(2)
-
-
-    world_state = agent_host.getWorldState()
-    print("Waiting for the mission to start ", end=' ')
-    while not world_state.has_mission_begun:
+            res = obv.get_world_state(world_state)
+            conn.send((json.dumps(res) + '\n').encode())
+            print("sent {}".format(res))
+        except BrokenPipeError:
+            print("Client Disconnected")
+            conn.close()
+            server.close()
+            sys.exit(0)     
+    elif data["vertical"] == 2 and data["horizontal"] == 2:
+        end = True
+    
+    else:
         print(".", end="")
         time.sleep(0.1)
         world_state = agent_host.getWorldState()
-        for error in world_state.errors:
-            print("Error:", error.text)
-
-    print("\nMission running", end=' ')
-    time.sleep(1)
-
-    while world_state.is_mission_running:
-        print(".", end="")
-        time.sleep(0.1)
-        world_state = agent_host.getWorldState()
-
         
-        if not reset:
-            data = json.loads(conn.recv(1024).decode().strip())
-        
-        if data["vertical"] == -2 and data["horizontal"] == -2:
-            reset = True
-            break
-        elif data["vertical"] == 2 and data["horizontal"] == 2:
-            end = True
-        else: 
-            h = data["horizontal"]
-            v = data["vertical"]
-            agent_host.sendCommand(create_command("move", v))
-            agent_host.sendCommand(create_command("strafe", h))
+        h = data["horizontal"]
+        v = data["vertical"]
+        agent_host.sendCommand(obv.create_command("move", v))
+        agent_host.sendCommand(obv.create_command("strafe", h))
     
                 
         try:
-            reset = False
             res = obv.get_world_state(world_state)
             conn.send((json.dumps(res) + '\n').encode())
+            print("sent {}".format(res))
         except BrokenPipeError:
             print("Client Disconnected")
             conn.close()
             server.close()
             sys.exit(0)
-    
-    print("\nEpisode complete.")
-    time.sleep(2) 
 
-
+    time.sleep(0.5)
 conn.close()
 server.close()
 print("Server closed.")

@@ -42,7 +42,8 @@
                 </AgentStart>
                 
                 <AgentHandlers>
-                <ObservationFromNearbyEntities>
+		<MissionQuitCommands/>
+		<ObservationFromNearbyEntities>
                   <Range name="entities" xrange="5" yrange="3" zrange="5"/>
                 </ObservationFromNearbyEntities>
                   <ObservationFromFullStats/>

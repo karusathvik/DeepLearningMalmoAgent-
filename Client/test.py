@@ -40,7 +40,9 @@ class SocketEnv(gym.Env):
         # Read initial state from socket
         action_dict = {"vertical": -2, "horizontal": -2} # this is to reset
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
+        print("sent reset")
         line = self.sock_file.readline()
+        print(f"received {line}")
         self.current_state = json.loads(line)
         
         # Convert state to numpy array
@@ -56,11 +58,12 @@ class SocketEnv(gym.Env):
         vert, horz = action
         action_dict = {"vertical": int(vert), "horizontal": int(horz)}
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
+        print(f"Sent {action_dict}")
         
         # Get next state from socket
         line = self.sock_file.readline()
         next_state = json.loads(line)
-        
+        print(f"Received {line}")
         # Convert state to numpy array
         state_array = np.array(list(next_state.values()), dtype=np.float32)
         

@@ -19,14 +19,15 @@ def get_world_state(world_state):
 
     if world_state.number_of_observations_since_last_state > 0:
         obs = json.loads(world_state.observations[-1].text)
+        
         ents = obs.get('entities', [])
-
+        state['health'] = obs.get("Life", 0.0)
         # Agent (assume exactly one named 'Agent')
         agent = next((e for e in ents if e.get('name')=='Agent'), None)
         if agent:
             state['agentx'] = agent['x']
             state['agenty'] = agent['z']   # Malmo’s “y” is vertical; here we use x/z as our 2D plane
-            state['health'] = agent.get('life', 0.0)
+   
 
         # Diamonds (assume names 'Diamond1'…'Diamond5')
         diamond_ents = [e for e in ents if e.get('name') == 'Diamond']

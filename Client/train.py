@@ -1,9 +1,8 @@
-print("hi")
 from stable_baselines3 import PPO
 from socket_env import SocketEnv
 
 # Create the environment
-env = SocketEnv()
+env = SocketEnv(port = 5001)
 
 # Initialize the agent
 model = PPO("MlpPolicy", env, verbose=1)

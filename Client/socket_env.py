@@ -33,20 +33,22 @@ class SocketEnv(gym.Env):
         
         self.current_state = None
         
-    def reset(self):
+    def reset(self, *, seed=None, **kwargs):
         """
         Reset the environment and get initial state
         """
 
         action_dict = {"vertical": -2, "horizontal": -2} # this is to reset
+        print(f"Sending {action_dict}")
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
         line = self.sock_file.readline()
+        print(f"received {line}")
         self.current_state = json.loads(line)
         
         # Convert state to numpy array
         # Adjust this based on your actual state format
         state_array = np.array(list(self.current_state.values()), dtype=np.float32)
-        return state_array
+        return state_array, {}
     
     def step(self, action):
         """
@@ -56,30 +58,32 @@ class SocketEnv(gym.Env):
         vert, horz = action
         action_dict = {"vertical": int(vert), "horizontal": int(horz)}
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
+        print(f"Sent {action_dict}")
         
         # Get next state from socket
         line = self.sock_file.readline()
+        print(f"received {line}")
         next_state = json.loads(line)
         
         # Convert state to numpy array
         state_array = np.array(list(next_state.values()), dtype=np.float32)
         
         # Get reward and done flag from state
-        total_collected = next_state.get("d1") + next_state.get("d2") +next_state.get("d3") +next_state.get("d4")+ next_state.get("d5")
-        already_collected = self.current_state.get("d1") + self.current_state.get("d2") + self.current_state.get("d3") + self.current_state.get("d4") + self.current_state.get("d5")
+        to_collect = next_state.get("d1") + next_state.get("d2") +next_state.get("d3") +next_state.get("d4")+ next_state.get("d5")
+        prev_to_collect = self.current_state.get("d1") + self.current_state.get("d2") + self.current_state.get("d3") + self.current_state.get("d4") + self.current_state.get("d5")
         new_health = next_state.get("health")
         old_health = self.current_state.get("health")
-        
-        # reward = 5*(total_collected - already_collected) +2*(new_health - old_health) - 0.01
-        reward = 2*(new_health - old_health) - 0.01
+        reward = -0.01
         done = next_state.get("done", False)
-        if(total_collected == 5):
+        if new_health < old_health:
+            reward = reward - 10
+        # reward = 5*(prev_to_collect - to_collect) +2*(new_health - old_health) - 0.01
+        if(to_collect == 0):
             done = True
             reward = reward + 100
         # Store current state
         self.current_state = next_state
-        
-        return state_array, reward, done, {}
+        return state_array, reward, done, False, {} 
     
     def close(self):
         action_dict = {"vertical": 2, "horizontal": 2}

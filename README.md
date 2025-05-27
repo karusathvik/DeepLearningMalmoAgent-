@@ -9,4 +9,4 @@ Sathvik: docker run -it \
   -v ~/malmo_beta:/home/malmo \
   andkram/malmo
 
-docker run -it -p 5901:5901 -p 6901:6901 -p 8888:8888 -e VNC_PW=vncpassword -v ~/Desktop/malmo_data:/home/malmo malmo-with-numpy
+docker run -it -p 5901:5901 -p 6901:6901 -p 8888:8888 -p 5001:5001 -e VNC_PW=vncpassword -v ~/Desktop/malmo_data:/home/malmo malmo-with-numpy

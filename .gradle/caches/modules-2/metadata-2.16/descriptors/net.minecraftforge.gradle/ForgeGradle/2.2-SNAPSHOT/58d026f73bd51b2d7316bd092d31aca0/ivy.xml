@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
-  <info organisation="net.minecraftforge.gradle" module="ForgeGradle" revision="2.2-SNAPSHOT" status="integration" publication="20250522215542">
+  <info organisation="net.minecraftforge.gradle" module="ForgeGradle" revision="2.2-SNAPSHOT" status="integration" publication="20250527192416">
     <license name="Lesser GNU Public License, Version 2.1" url="https://www.gnu.org/licenses/lgpl-2.1.html"/>
     <description homepage="https://github.com/MinecraftForge/ForgeGradle">Gradle plugin for Forge</description>
   </info>
