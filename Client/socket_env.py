@@ -56,7 +56,7 @@ class SocketEnv(gym.Env):
         """
         # Send action to socket
         vert, horz = action
-        action_dict = {"vertical": int(vert), "horizontal": int(horz)}
+        action_dict = {"vertical": float(vert), "horizontal": float(horz)}
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
         print(f"Sent {action_dict}")
         
