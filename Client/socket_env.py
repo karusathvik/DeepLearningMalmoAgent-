@@ -58,11 +58,11 @@ class SocketEnv(gym.Env):
         vert, horz = action
         action_dict = {"vertical": float(vert), "horizontal": float(horz)}
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
-        print(f"Sent {action_dict}")
+        # print(f"Sent {action_dict}")
         
         # Get next state from socket
         line = self.sock_file.readline()
-        print(f"received {line}")
+        # print(f"received {line}")
         next_state = json.loads(line)
         
         # Convert state to numpy array
@@ -86,6 +86,8 @@ class SocketEnv(gym.Env):
             reward = reward + 100
         # Store current state
         self.current_state = next_state
+        if reward != -0.01:
+            print(f"received feedback reward = {reward}")
         return state_array, reward, done, False, {} 
     
     def close(self):
