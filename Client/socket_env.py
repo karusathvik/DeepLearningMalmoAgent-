@@ -77,7 +77,10 @@ class SocketEnv(gym.Env):
         done = next_state.get("done", False)
         if new_health < old_health:
             reward = reward - 10
-        # reward = 5*(prev_to_collect - to_collect) +2*(new_health - old_health) - 0.01
+        if new_health <= 0:
+            reward = reward - 200
+        if prev_to_collect > to_collect:
+            reward = reward + 30
         if(to_collect == 0):
             done = True
             reward = reward + 100
