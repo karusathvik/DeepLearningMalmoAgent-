@@ -30,66 +30,103 @@ class SocketEnv(gym.Env):
 # d2x, d2y, d3x, d3y, d4x, d4y, d5x, d5y, d1, d2, d3, d4, d5, zx, zy, done)
             dtype=np.float32
         )
-        
+        self.c_step = 0
         self.current_state = None
         
     def reset(self, *, seed=None, **kwargs):
         """
         Reset the environment and get initial state
         """
-
+        print(f"Reset and at {self.c_step}")
+        self.current_state = None
         action_dict = {"vertical": -2, "horizontal": -2} # this is to reset
-        print(f"Sending {action_dict}")
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
         line = self.sock_file.readline()
-        print(f"received {line}")
         self.current_state = json.loads(line)
         
         # Convert state to numpy array
         # Adjust this based on your actual state format
         state_array = np.array(list(self.current_state.values()), dtype=np.float32)
         return state_array, {}
-    
+
+
     def step(self, action):
         """
         Execute one time step within the environment
         """
+        self.c_step += 1 
         # Send action to socket
         vert, horz = action
         action_dict = {"vertical": float(vert), "horizontal": float(horz)}
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
-        # print(f"Sent {action_dict}")
-        
+
         # Get next state from socket
         line = self.sock_file.readline()
-        # print(f"received {line}")
         next_state = json.loads(line)
-        
+
         # Convert state to numpy array
         state_array = np.array(list(next_state.values()), dtype=np.float32)
-        
-        # Get reward and done flag from state
-        to_collect = next_state.get("d1") + next_state.get("d2") +next_state.get("d3") +next_state.get("d4")+ next_state.get("d5")
-        prev_to_collect = self.current_state.get("d1") + self.current_state.get("d2") + self.current_state.get("d3") + self.current_state.get("d4") + self.current_state.get("d5")
-        new_health = next_state.get("health")
-        old_health = self.current_state.get("health")
-        reward = -0.01
+
+        # Reward calculation
+        reward = 0
         done = next_state.get("done", False)
-        if new_health < old_health:
-            reward = reward - 10
+
+        # Current and previous diamond collection
+        collected = sum(next_state.get(f"d{i}", 0) for i in range(1, 6))
+        prev_collected = sum(self.current_state.get(f"d{i}", 0) for i in range(1, 6))
+
+        # Health change
+        new_health = next_state.get("health", 0)
+        old_health = self.current_state.get("health", 0)
+        health_loss = old_health - new_health
+        if health_loss > 0:
+            reward -= 100 * health_loss
         if new_health <= 0:
-            reward = reward - 200
-        if prev_to_collect > to_collect:
-            reward = reward + 30
-        if(to_collect == 0):
-            done = True
-            reward = reward + 100
-        # Store current state
+            reward -= 700
+
+        # Diamond collection reward
+        if collected > prev_collected:
+            reward += 500 * (collected - prev_collected)
+        if collected == 5:
+            reward += 2500
+
+        # Distance shaping
+        def _euclidean(x1, y1, x2, y2):
+            return np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+
+        agentx = next_state.get("agentx")
+        agenty = next_state.get("agenty")
+
+        # Penalize being close to zombie
+        zx = next_state.get("zx")
+        zy = next_state.get("zy")
+        if zx is not None and zy is not None:
+            zombie_dist = _euclidean(agentx, agenty, zx, zy)
+            if zombie_dist < 3.5:
+                reward -= (3.5 - zombie_dist) * 20
+        # Distance-based shaping toward nearest uncollected diamond
+        diamond_locs = [
+            (next_state.get(f"d{i}x", 0.0), next_state.get(f"d{i}y", 0.0)) for i in range(1, 6)
+        ]
+        collected_flags = [next_state.get(f"d{i}", 0) for i in range(1, 6)]
+
+        # List of uncollected diamond coordinates
+        uncollected = [pos for pos, collected in zip(diamond_locs, collected_flags) if collected == 0]
+
+        if uncollected:
+            nearest_dist = min(_euclidean(agentx, agenty, dx, dy) for dx, dy in uncollected)
+            reward += max(0, (10 - nearest_dist)) * 2  # up to +20 reward
+
+        # Update current state
         self.current_state = next_state
-        if reward != -0.01:
-            print(f"received feedback reward = {reward}")
-        return state_array, reward, done, False, {} 
-    
+
+
+        if reward:
+            print(f"{self.c_step} received feedback reward = {reward}")
+
+        return state_array, reward, done, False, {}
+
     def close(self):
         action_dict = {"vertical": 2, "horizontal": 2}
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
