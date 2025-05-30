@@ -45,7 +45,7 @@
                 <AgentHandlers>
 		<MissionQuitCommands/>
 		<ObservationFromNearbyEntities>
-                  <Range name="entities" xrange="30" yrange="3" zrange="30"/>
+                  <Range name="entities" xrange="60" yrange="3" zrange="60"/>
                 </ObservationFromNearbyEntities>
                   <ObservationFromFullStats/>
                   <ContinuousMovementCommands turnSpeedDegs="180"/>
