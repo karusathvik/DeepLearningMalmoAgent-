@@ -68,55 +68,67 @@ class SocketEnv(gym.Env):
         state_array = np.array(list(next_state.values()), dtype=np.float32)
 
         # Reward calculation
-        reward = 0
+        reward = -5
         done = next_state.get("done", False)
 
         # Current and previous diamond collection
         collected = sum(next_state.get(f"d{i}", 0) for i in range(1, 6))
         prev_collected = sum(self.current_state.get(f"d{i}", 0) for i in range(1, 6))
-
+        agentx = next_state.get("agentx")
+        agenty = next_state.get("agenty")
+        xmin = -10
+        xmax = 10
+        zmin = -10
+        zmax = 10
+        def _euclidean(x1, y1, x2, y2):
+            return np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+        corner_dist = min(_euclidean(agentx, agenty, xmin, zmin), _euclidean(agentx, agenty, xmax, zmin), _euclidean(agentx, agenty, xmin, zmax), _euclidean(agentx, agenty, xmax, zmax))
+# whenever the agent is closer than 2 units to a wall, penalize:
+        if corner_dist < 2.0:
+            reward -= (2.0 - corner_dist) * 30
+            
         # Health change
         new_health = next_state.get("health", 0)
         old_health = self.current_state.get("health", 0)
         health_loss = old_health - new_health
         if health_loss > 0:
-            reward -= 100 * health_loss
-        if new_health <= 0:
-            reward -= 700
+            reward -= 200 
+        if new_health <= 0 or (done==True and collected < 5):
+            done = True
+            reward -= 3000
 
         # Diamond collection reward
         if collected > prev_collected:
-            reward += 500 * (collected - prev_collected)
+            reward += 1000 
         if collected == 5:
-            reward += 2500
+            reward += 5000
+            done = True
 
         # Distance shaping
-        def _euclidean(x1, y1, x2, y2):
-            return np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+        
 
 
-        agentx = next_state.get("agentx")
-        agenty = next_state.get("agenty")
+
 
         # Penalize being close to zombie
-        zx = next_state.get("zx")
-        zy = next_state.get("zy")
-        if zx is not None and zy is not None:
-            zombie_dist = _euclidean(agentx, agenty, zx, zy)
-            if zombie_dist < 3.5:
-                reward -= (3.5 - zombie_dist) * 20
+        # zx = next_state.get("zx")
+        # zy = next_state.get("zy")
+        # if zx is not None and zy is not None:
+        #     zombie_dist = _euclidean(agentx, agenty, zx, zy)
+        #     if zombie_dist < 3.5:
+        #         reward -= (3.5 - zombie_dist) * 20
         # Distance-based shaping toward nearest uncollected diamond
-        diamond_locs = [
-            (next_state.get(f"d{i}x", 0.0), next_state.get(f"d{i}y", 0.0)) for i in range(1, 6)
-        ]
-        collected_flags = [next_state.get(f"d{i}", 0) for i in range(1, 6)]
+        # diamond_locs = [
+        #     (next_state.get(f"d{i}x", 0.0), next_state.get(f"d{i}y", 0.0)) for i in range(1, 6)
+        # ]
+        # collected_flags = [next_state.get(f"d{i}", 0) for i in range(1, 6)]
 
         # List of uncollected diamond coordinates
-        uncollected = [pos for pos, collected in zip(diamond_locs, collected_flags) if collected == 0]
+        # uncollected = [pos for pos, collected in zip(diamond_locs, collected_flags) if collected == 0]
 
-        if uncollected:
-            nearest_dist = min(_euclidean(agentx, agenty, dx, dy) for dx, dy in uncollected)
-            reward += max(0, (10 - nearest_dist)) * 2  # up to +20 reward
+        # if uncollected:
+        #     nearest_dist = min(_euclidean(agentx, agenty, dx, dy) for dx, dy in uncollected)
+        #     reward += max(0, (10 - nearest_dist)) * 2  # up to +20 reward
 
         # Update current state
         self.current_state = next_state
