@@ -66,7 +66,7 @@ run = 0
 
 end = False 
 reset = False 
-
+firstRun = True
 
 
 while end == False:
@@ -79,11 +79,17 @@ while end == False:
         reset = False
         run += 1
         print("\nStarting Episode {}".format(run))
-
+        if firstRun == False and world_state.is_mission_running:              
+            agent_host.sendCommand("quit")         
+            # Wait until the mission actually terminates
+            world_state = agent_host.getWorldState()  
+            while world_state.is_mission_running:         
+                time.sleep(0.1)                        
+                world_state = agent_host.getWorldState()
         my_mission = MalmoPython.MissionSpec(missionXML, False)
         my_mission_record = MalmoPython.MissionRecordSpec()
 
-
+        firstRun = False
         for retry in range(max_retries):
             try:
                 agent_host.startMission(my_mission, my_mission_record)
