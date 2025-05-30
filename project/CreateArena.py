@@ -114,7 +114,7 @@ while end == False:
                 print("Error:", error.text)
        
         print("\nMission running", end=' ')
-        time.sleep(1)
+        time.sleep(0.3)
         world_state = agent_host.getWorldState()
         try:
             res = obv.get_world_state(world_state)
