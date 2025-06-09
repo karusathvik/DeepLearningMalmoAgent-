@@ -26,10 +26,10 @@ model = SAC(
     "MlpPolicy", env,
     learning_rate=3e-4,
     buffer_size=50_000,    # replay buffer
-    learning_starts=1000,  # collect some data before learning
+    learning_starts=5000,  # collect some data before learning
     batch_size=64,
     tau=0.005,             # target smoothing coefficient
-    gamma=0.99,
+    gamma=1,
     ent_coef="auto",       # auto-tune entropy weight
     verbose=1
 )

@@ -25,7 +25,7 @@ class SocketEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=-np.inf, 
             high=np.inf, 
-            shape=(21,),  
+            shape=(25,),  
 # State Space: (agentx, agenty, health, d1x, d1y, 
 # d2x, d2y, d3x, d3y, d4x, d4y, d5x, d5y, d1, d2, d3, d4, d5, zx, zy, done)
             dtype=np.float32
@@ -47,6 +47,7 @@ class SocketEnv(gym.Env):
         # Convert state to numpy array
         # Adjust this based on your actual state format
         state_array = np.array(list(self.current_state.values()), dtype=np.float32)
+        
         return state_array, {}
 
 
@@ -59,7 +60,8 @@ class SocketEnv(gym.Env):
         vert, horz = action
         action_dict = {"vertical": float(vert), "horizontal": float(horz)}
         self.sock.sendall((json.dumps(action_dict) + "\n").encode())
-
+        oldX = self.current_state.get("agentx")
+        oldY = self.current_state.get("agenty")
         # Get next state from socket
         line = self.sock_file.readline()
         next_state = json.loads(line)
@@ -68,7 +70,7 @@ class SocketEnv(gym.Env):
         state_array = np.array(list(next_state.values()), dtype=np.float32)
 
         # Reward calculation
-        reward = -5
+        reward = 0
         done = next_state.get("done", False)
 
         # Current and previous diamond collection
@@ -85,7 +87,7 @@ class SocketEnv(gym.Env):
         corner_dist = min(_euclidean(agentx, agenty, xmin, zmin), _euclidean(agentx, agenty, xmax, zmin), _euclidean(agentx, agenty, xmin, zmax), _euclidean(agentx, agenty, xmax, zmax))
 # whenever the agent is closer than 2 units to a wall, penalize:
         if corner_dist < 2.0:
-            reward -= (2.0 - corner_dist) * 30
+            reward -= (2.0 - corner_dist) * 300
             
         # Health change
         new_health = next_state.get("health", 0)
@@ -96,12 +98,12 @@ class SocketEnv(gym.Env):
         if new_health <= 0 or (done==True and collected < 5):
             done = True
             reward -= 3000
-
+        reward += _euclidean(oldX, oldY, next_state.get("agentx"), next_state.get("agenty"))*5
         # Diamond collection reward
         if collected > prev_collected:
-            reward += 1000 
+            reward += 5000 
         if collected == 5:
-            reward += 5000
+            reward += 25000
             done = True
 
         # Distance shaping
