@@ -103,7 +103,7 @@ class SocketEnv(gym.Env):
         if collected > prev_collected:
             reward += 5000 
         if collected == 5:
-            reward += 25000
+            reward += 25000 - self.c_step*50
             done = True
 
         # Distance shaping
