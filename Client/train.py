@@ -26,7 +26,7 @@ model = SAC(
     "MlpPolicy", env,
     learning_rate=3e-4,
     buffer_size=50_000,    # replay buffer
-    learning_starts=5000,  # collect some data before learning
+    learning_starts=7500,  # collect some data before learning
     batch_size=64,
     tau=0.005,             # target smoothing coefficient
     gamma=1,
@@ -35,7 +35,7 @@ model = SAC(
 )
 
 # Number of timesteps between saves
-TIMESTEPS_PER_SAVE = 1024
+TIMESTEPS_PER_SAVE = 2048
 
 try:
     total_timesteps = 0
@@ -44,10 +44,10 @@ try:
         total_timesteps += TIMESTEPS_PER_SAVE
         print(f"Trained {total_timesteps} timesteps — saving model...")
         # Save with the current total timesteps in the filename
-        model.save(f"socket_agent")
+        model.save(f"SACModels/socket_agent_{total_timesteps}")
 except KeyboardInterrupt:
     print("Training interrupted by user. Saving final model...")
-    model.save(f"socket_agent_final_{total_timesteps}")
+    model.save(f"SACModels/socket_agent_final_{total_timesteps}")
 finally:
     env.close()
 

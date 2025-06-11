@@ -37,6 +37,8 @@ class SocketEnv(gym.Env):
         """
         Reset the environment and get initial state
         """
+        self.c_step = 0
+
         print(f"Reset and at {self.c_step}")
         self.current_state = None
         action_dict = {"vertical": -2, "horizontal": -2} # this is to reset
@@ -98,10 +100,10 @@ class SocketEnv(gym.Env):
         if new_health <= 0 or (done==True and collected < 5):
             done = True
             reward -= 3000
-        reward += _euclidean(oldX, oldY, next_state.get("agentx"), next_state.get("agenty"))*5
+        reward += _euclidean(oldX, oldY, next_state.get("agentx"), next_state.get("agenty"))*15
         # Diamond collection reward
         if collected > prev_collected:
-            reward += 5000 
+            reward += 6200 - self.c_step*25
         if collected == 5:
             reward += 25000 - self.c_step*50
             done = True
