@@ -87,6 +87,7 @@ while end == False:
                 time.sleep(0.1)                        
                 world_state = agent_host.getWorldState()
         my_mission = MalmoPython.MissionSpec(missionXML, False)
+        my_mission.setViewpoint(1)
         my_mission_record = MalmoPython.MissionRecordSpec()
 
         firstRun = False

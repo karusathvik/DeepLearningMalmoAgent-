@@ -35,7 +35,7 @@ model = SAC(
 )
 
 # Number of timesteps between saves
-TIMESTEPS_PER_SAVE = 2048
+TIMESTEPS_PER_SAVE = 10000
 
 try:
     total_timesteps = 0
@@ -44,10 +44,10 @@ try:
         total_timesteps += TIMESTEPS_PER_SAVE
         print(f"Trained {total_timesteps} timesteps — saving model...")
         # Save with the current total timesteps in the filename
-        model.save(f"SACModels/socket_agent_{total_timesteps}")
+        model.save(f"SACModels2/socket_agent_{total_timesteps}")
 except KeyboardInterrupt:
     print("Training interrupted by user. Saving final model...")
-    model.save(f"SACModels/socket_agent_final_{total_timesteps}")
+    model.save(f"SACModels2/socket_agent_final_{total_timesteps}")
 finally:
     env.close()
 

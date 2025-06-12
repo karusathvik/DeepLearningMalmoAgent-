@@ -1,10 +1,14 @@
-from stable_baselines3.common.evaluation import evaluate_policy
+# from stable_baselines3.common.evaluation import evaluate_policy
+# from socket_env import SocketEnv
+# from stable_baselines3 import PPO, SAC
 from socket_env import SocketEnv
-from stable_baselines3 import PPO, SAC
+from stable_baselines3.common.env_checker import check_env
+env = SocketEnv(host="localhost", port=5001)
+check_env(env)
 
-eval_env = SocketEnv(host="localhost", port=5001)
-model = SAC.load("SACModels/socket_agent_final_34816.zip", env=eval_env)
-model.learn(total_timesteps=5000, reset_num_timesteps=False)
+# eval_env = SocketEnv(host="localhost", port=5001)
+# model = SAC.load("SACModels/socket_agent_final_34816.zip", env=eval_env)
+# model.learn(total_timesteps=5000, reset_num_timesteps=False)
 # mean_rew, std_rew = evaluate_policy(model, eval_env,
 #                                     n_eval_episodes=10,
 #                                     deterministic=True)

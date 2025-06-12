@@ -3,6 +3,7 @@ import json
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
+import csv
 
 class SocketEnv(gym.Env):
     """
@@ -31,13 +32,25 @@ class SocketEnv(gym.Env):
             dtype=np.float32
         )
         self.c_step = 0
+        self.collectedDiamonds = 0
+        self.totalReward = 0
+        self.numHits = 0
+        self.stats = []
         self.current_state = None
         
     def reset(self, *, seed=None, **kwargs):
         """
         Reset the environment and get initial state
         """
+        self.stats.append([self.c_step, self.collectedDiamonds, self.totalReward, self.numHits])
+
+        arr = np.array(self.stats)
+        np.savetxt("stats.csv", arr, delimiter=",", fmt="%s")
+
         self.c_step = 0
+        self.collectedDiamonds = 0
+        self.totalReward = 0
+        self.numHits = 0
 
         print(f"Reset and at {self.c_step}")
         self.current_state = None
@@ -96,6 +109,7 @@ class SocketEnv(gym.Env):
         old_health = self.current_state.get("health", 0)
         health_loss = old_health - new_health
         if health_loss > 0:
+            self.numHits += 1
             reward -= 200 
         if new_health <= 0 or (done==True and collected < 5):
             done = True
@@ -107,7 +121,8 @@ class SocketEnv(gym.Env):
         if collected == 5:
             reward += 25000 - self.c_step*50
             done = True
-
+        self.collectedDiamonds = max(collected, self.collectedDiamonds)
+        self.totalReward += reward
         # Distance shaping
         
 

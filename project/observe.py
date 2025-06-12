@@ -19,6 +19,7 @@ def get_world_state(world_state):
         'd5x': 0.0, 'd5y': 0.0,
         'd1': 1, 'd2': 1, 'd3': 1, 'd4': 1, 'd5': 1,
         'zx': 0.0, 'zy': 0.0,
+        'dist1': 10, 'dist2': 10, 'dist3': 10, 'dist4': 10,
         'done': not world_state.is_mission_running
     }
 
@@ -47,4 +48,9 @@ def get_world_state(world_state):
         if zombie:
             state['zx'] = zombie['x']
             state['zy'] = zombie['z']
+        state['dist1'] = 10.7-state['agentx']
+        state['dist2'] = 10.7-state['agenty']
+        state['dist3'] = -10.7-state['agentx']
+        state['dist4'] = -10.7-state['agenty']
+              
     return state
